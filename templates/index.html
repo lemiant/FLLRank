@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+ <style>
+            .btn-file {
+              position: relative;
+              overflow: hidden;
+            }
+            .btn-file input[type=file] {
+              position: absolute;
+              top: 0;
+              right: 0;
+              min-width: 100%;
+              min-height: 100%;
+              font-size: 100px;
+              text-align: right;
+              filter: alpha(opacity=0);
+              opacity: 0;
+              background: red;
+              cursor: inherit;
+              display: block;
+            }
+            input[readonly] {
+              background-color: white !important;
+              cursor: text !important;
+            }
+        </style>
+        <script>
+            $(document).on('change', '.btn-file :file', function() {
+              var input = $(this),
+                  numFiles = input.get(0).files ? input.get(0).files.length : 1,
+                  label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+              input.trigger('fileselect', [numFiles, label]);
+            });
+            $(document).ready( function() {
+    $('.btn-file :file').on('fileselect', function(event, numFiles, label) {
+
+        var input = $(this).parents('.input-group').find(':text'),
+            log = numFiles > 1 ? numFiles + ' files selected' : label;
+
+        if( input.length ) {
+            input.val(log);
+        } else {
+            if( log ) alert(log);
+        }
+
+    });
+});
+        </script>
+        <style>
+            .wrapper {
+                width: 960px;
+                margin: auto;
+            }
+            .left {
+                float: left;
+                width: 50%;
+                padding: 30px;
+            }
+            .right {
+                float: left;
+                width: 50%;
+                padding: 20px;
+            }
+            .box {
+                width: 40%;
+                margin: 80px auto;
+                background-color: #f0f0ec;
+                padding: 15px;
+                border-radius: 12px;
+                box-shadow: #888 2px 3px 4px 0px;
+                border: solid #acacac 4px;
+                text-align: center;
+            }
+            .btn-primary {
+                margin-top: 10px;
+                padding: 8px 12px;
+            }
+        </style>
+                <div class="box">
+                    <form name="files" action="/solve" method="post" enctype="multipart/form-data">
+                        <h4>CSV of Events</h4>
+                        <div class="input-group">
+                            <span class="input-group-btn">
+                                <span class="btn btn btn-info btn-file">
+                                    Browse… <input type="file" name="events" />
+                                </span>
+                            </span>
+                            <input type="text" class="form-control" readonly="">
+                        </div><br />
+                        <h4>CSV of Team Data</h4>
+                        <div class="input-group">
+                            <span class="input-group-btn">
+                                <span class="btn btn-info btn-file">
+                                    Browse… <input type="file" name="data" />
+                                </span>
+                            </span>
+                            <input type="text" class="form-control" readonly="">
+                        </div><br />
+                        <p style="text-align: center"><span class="btn btn-primary" style="margin" onclick="document.files.submit()">Calculate...</span></p>
+                        
+                    </form>
+                </div>
+{% endblock %}

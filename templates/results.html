@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style type="text/css">
+            .btn-primary {
+                margin-top: 10px;
+                padding: 8px 12px;
+            }
+            .list-group-item {
+                border-color: white;
+                border-width: 1px; 
+            }
+            li.error {
+                background-color: #e5706b;
+            }
+            li.error:before {
+                content: "Error: ";
+                margin-right: 4px;
+                font-weight: bold;
+            }
+            li.warning {
+                background-color: #fff364;
+            }
+            li.warning:before {
+                content: "Warning: ";
+                margin-right: 4px;
+                font-weight: bold;
+            }
+            ul {
+            	width: 700px;
+            	margin: auto;
+            }
+</style>
+
+<div class="right" style="text-align: center;">
+	<h3>Data Errors:</h3>
+    <ul class="list-group">
+    {% for type, error in errors %}
+        <li class="list-group-item {{type}}">{{error|safe}}</li>
+    {% endfor %}
+    </ul>
+    <a href="{{results_file}}">
+    <span class="btn btn-primary">
+        Download!
+    </span>
+    </a>
+    <br><br><br><br>
+    <br><br><br><br>
+    <br><br><br><br>
+</div>
+{% endblock %}
