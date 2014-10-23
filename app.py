@@ -1,7 +1,7 @@
 from flask import Flask, send_from_directory, request, render_template
 from werkzeug import secure_filename
 import rankmatch
-import csv
+import csv, os
 from datetime import datetime
 app = Flask(__name__, static_folder='assets')
 
@@ -29,4 +29,7 @@ def results(csv):
 	return send_from_directory("results", csv)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+	if os.getcwd() == "/var/www":
+    	app.run(host="0.0.0.0", port=80, debug=True)
+	else:
+    	app.run(debug=True)
