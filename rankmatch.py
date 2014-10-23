@@ -6,6 +6,7 @@ import pdb
 def addTo(event, group):
     event["open"] -= len(group["team_numbers"])
     event["groups"].append(group)
+    group["current"] = event["name"]
     
 def removeFrom(event, group):
     event["open"] += len(group["team_numbers"])
@@ -69,6 +70,21 @@ def allocationPass(events, groups, rank):
             addTo(event, group)
             groups.remove(group)
 
+def fillEvent(events, event, groups):
+    pass
+
+def minimumPass(events, groups):
+    for event_name, event in events.items():
+        # Too many open spots
+        if event["open"] > event["max"]-event["min"]:
+            for rank in range(1:3):
+                for group in groups:
+                    if group.get("current", "") != event_name and event_name == group["selections"][rank]:
+                        if "current" in group:
+                            removeFrom(events[group["current"]], group)
+                        addTo(event, group)
+                        if event["open"] > event["max"]-event["min"]:
+
 
     
 def getSchedule(events, groups):
@@ -94,12 +110,16 @@ def getSchedule(events, groups):
     failed = []
 
     groups.sort(key=lambda g: g["date"])
+    all_groups = copy.copy(groups)
 
     allocationPass(events, groups, 0)
     allocationPass(events, groups, 1)
     pushPass(events, groups, 1)
     allocationPass(events, groups, 2)
     pushPass(events, groups, 2)
+
+    # Make sure all events are filled
+    minimumPass(events, all_groups)
 
     # Everything left failed
     events["Unmatched"] = {"groups": groups, "max": "0", "min": 0, "open": 0, "total": 0}
@@ -136,6 +156,7 @@ def rankMatch(src_events, src_data):
         extra = 0 if spots<=12 else 1 if spots<=20 else 2
         events[name] = {
             "groups": [],
+            "name": name,
             "total": spots,
             "max": spots-extra,
             "open": spots-extra,
