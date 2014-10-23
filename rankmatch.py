@@ -11,33 +11,65 @@ def removeFrom(event, group):
     event["open"] += len(group["team_numbers"])
     event["groups"].remove(group)
     
+def pushAll(src, pushable):
+    for target, pushee in pushable:
+        if target["open"] >= len(pushee["team_numbers"]):
+            removeFrom(src, pushee)
+            addTo(target, pushee)
+            break
+
 def tryPushTo(events, event, group, pushLimit):
     for ev in events.values():
         ev["shadow_open"] = ev["open"]
     pushable = []
     avail = event["open"]
-    for pushee in reversed(event["groups"]):
-        for i, s in enumerate(pushee["selections"]):
-            sel = events[s]
-            if i >= pushLimit: break
+    pushees = sorted(event["groups"], key=lambda g: g["date"], reverse=True)
+    for rank in range(pushLimit+1):
+        # Displace people to underfilled events
+        for pushee in copy.copy(pushees):
+            sel = events[pushee["selections"][rank]]
+            filled = sel["max"]-sel["open"]
             if sel == event: continue
-            if sel["shadow_open"] >= len(pushee["team_numbers"]):
-                pushable.append(pushee)
+            if filled < sel["min"] and sel["shadow_open"] >= len(pushee["team_numbers"]):
+                pushable.append([sel, pushee])
+                pushees.remove(pushee)
                 avail += len(pushee["team_numbers"])
                 sel["shadow_open"] -= len(pushee["team_numbers"])
                 if avail >= len(group["team_numbers"]):
-                    for pushee in pushable:
-                        for s in pushee["selections"]:
-                            sel = events[s]
-                            if sel != event and sel["open"] >= len(pushee["team_numbers"]):
-                                removeFrom(event, pushee)
-                                addTo(sel, pushee)
-                                break
+                    pushAll(event, pushable)
                     addTo(event, group)
                     return True
-                else:
-                    break
+
+        # Displace people to open events
+        for pushee in copy.copy(pushees):
+            sel = events[pushee["selections"][rank]]
+            filled = sel["max"]-sel["open"]
+            if sel == event: continue
+            if sel["shadow_open"] >= len(pushee["team_numbers"]):
+                pushable.append([sel, pushee])
+                pushees.remove(pushee)
+                avail += len(pushee["team_numbers"])
+                sel["shadow_open"] -= len(pushee["team_numbers"])
+                if avail >= len(group["team_numbers"]):
+                    pushAll(event, pushable)
+                    addTo(event, group)
+                    return True
     return False
+
+def pushPass(events, groups, rank):
+    for group in copy.copy(groups):
+        event = events[group["selections"][rank]]
+        if tryPushTo(events, event, group, rank):
+            groups.remove(group)
+
+def allocationPass(events, groups, rank):
+    for group in copy.copy(groups):
+        event = events[group["selections"][rank]]
+        if event["open"] >= len(group["team_numbers"]):
+            addTo(event, group)
+            groups.remove(group)
+
+
     
 def getSchedule(events, groups):
     # events = {
@@ -62,31 +94,16 @@ def getSchedule(events, groups):
     failed = []
 
     groups.sort(key=lambda g: g["date"])
-    
-    for group in groups:
-        selections = group["selections"]
-        if events[selections[0]]["open"] >= len(group["team_numbers"]):
-            addTo(events[selections[0]], group)
+
+    allocationPass(events, groups, 0)
+    allocationPass(events, groups, 1)
+    pushPass(events, groups, 1)
+    allocationPass(events, groups, 2)
+    pushPass(events, groups, 2)
+
+    # Everything left failed
+    events["Unmatched"] = {"groups": groups, "max": "0", "min": 0, "open": 0, "total": 0}
             
-        elif events[selections[1]]["open"] >= len(group["team_numbers"]):
-            addTo(events[selections[1]], group)
-            
-        elif tryPushTo(events, events[selections[1]], group, 2):
-            pass # The push executes if it passes
-        
-        elif events[selections[2]]["open"] >= len(group["team_numbers"]):
-            addTo(events[selections[2]], group)
-            
-        elif tryPushTo(events, eventsp[selections[1]], group, 3):
-            pass
-            
-        elif tryPushTo(events, eventsp[selections[2]], group, 3):
-            pass
-        
-        else:
-            failed.append(group)
-            
-    events["Unmatched"] = {"groups": failed, "max": "0", "min": 0, "open": 0, "total": 0}
     return events
 
 
