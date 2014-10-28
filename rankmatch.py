@@ -304,7 +304,7 @@ def rankMatch(src_events, src_data):
                     selection_index = 9
                 result_row = [event_name, selection_index, last_group_index+group_index+1]+row
                 results.append(result_row)
-        last_group_index += group_index
+        last_group_index += group_index+1
 
     return results, errors
 
