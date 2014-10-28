@@ -150,6 +150,7 @@ def rankMatch(src_events, src_data):
     CHOICE2 = getHeader(headers, r'2nd choice')
     CHOICE3 = getHeader(headers, r'3rd choice')
     FRIENDS = getHeader(headers, r'team paired')
+    PRIORITY = getHeader(headers, r'priority')
     DATE = getHeader(headers, r'startdate')
 
     for i, row in list(enumerate(src_data))[1:]:
@@ -175,7 +176,8 @@ def rankMatch(src_events, src_data):
                 utfStrip(row[CHOICE2]),
                 utfStrip(row[CHOICE3])
             ],
-            "friends": set(re.findall(r'\d\d\d+', row[FRIENDS]))
+            "friends": set(re.findall(r'\d\d\d+', row[FRIENDS])),
+            "priority": bool(row[PRIORITY])
         }
         teamIndex[number] = team
 
@@ -255,21 +257,34 @@ def rankMatch(src_events, src_data):
 
     for group in groups:
         group["date"] = max([team["date"] for team in group["teams"]])
+        priority_list = [team["priority"] for team in group["teams"]]
+        if any(priority_list) and not all(priority_list):
+            errors.append(["error", "Some, but not all of ("+", ".join(group["team_numbers"])+") have priority. THE GROUP WILL NOT GET PRIORITY."])
+        group["priority"] = all(priority_list)
 
 # Clean up groups
     for group in groups:
         del group["teams"]
         del group["nominees"]
         del group["votes"]
-        
-# Create group index
-    groupIndex = {}
+
+# Filter out priority teams
+    one_percent = []
+    unwashed_masses = []
     for group in groups:
-        key = ", ".join(group["team_numbers"])
-        groupIndex[key] = group
-    
+        if group["priority"]:
+            one_percent.append(group)
+            events[group["selections"][0]]["open"] -= len(group["team_numbers"])
+        else:
+            unwashed_masses.append(group)
+
 # Run algorithm
-    getSchedule(events, groups) # alters "events"
+    getSchedule(events, unwashed_masses) # alters "events"
+
+# Put back in important teams
+    for group in one_percent:
+        event = events[group["selections"][0]]
+        event["groups"].append(group)
 
 # Parse back into rows
     results = [["Scheduled Event", "Event Rank", "Group ID"] + src_data[0] ]
