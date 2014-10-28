@@ -150,14 +150,18 @@ def rankMatch(src_events, src_data):
     CHOICE2 = getHeader(headers, r'2nd choice')
     CHOICE3 = getHeader(headers, r'3rd choice')
     FRIENDS = getHeader(headers, r'team paired')
-    PRIORITY = getHeader(headers, r'priority')
+    PRIORITY = getHeader(headers, r'preference')
     DATE = getHeader(headers, r'startdate')
 
     for i, row in list(enumerate(src_data))[1:]:
         row += [""]*(len(headers) - len(row)) # pad
         m = re.search("\d\d\d+", row[TEAM_NUMBER])
         number = m.group() if m else ""
-        date = datetime.strptime(row[DATE], "%m/%d/%y %H:%M")
+        try:
+            date = datetime.strptime(row[DATE], "%m/%d/%y %H:%M")
+        except:
+            errors.append(["error", "Row #"+str(i+1)+" has an invalid date. WILL BE SKIPPED!"])
+            continue
 
         if not row[CHOICE1] or not row[CHOICE2] or not row[CHOICE3]:
             errors.append(["error", "Row #"+str(i+1)+" (team "+row[TEAM_NUMBER]+") is missing selections for 1st, 2nd and/or 3rd place. WILL BE SKIPPED!"])
@@ -294,7 +298,11 @@ def rankMatch(src_events, src_data):
             for team in group["team_numbers"]:
                 team = teamIndex[team]
                 row = src_data[team["index"]]
-                result_row = [event_name, team["selections"].index(event_name)+1, last_group_index+group_index+1]+row
+                try:
+                    selection_index = team["selections"].index(event_name)+1
+                except ValueError:
+                    selection_index = 9
+                result_row = [event_name, selection_index, last_group_index+group_index+1]+row
                 results.append(result_row)
         last_group_index += group_index
 
