@@ -29,7 +29,7 @@ def results(csv):
     return send_from_directory("results", csv)
 
 if __name__ == "__main__":
-    if os.getcwd() == "/var/www":
+    if os.getcwd() == "/root/fll_work_tree":
         app.run(host="0.0.0.0", port=80, debug=True)
     else:
         app.run(debug=True)
