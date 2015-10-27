@@ -1,7 +1,6 @@
 import csv, re, copy
 from datetime import datetime
 from collections import OrderedDict, defaultdict
-import pdb
 
 def addTo(event, group):
     event["open"] -= len(group["team_numbers"])
@@ -158,7 +157,7 @@ def rankMatch(src_events, src_data):
         m = re.search("\d\d\d+", row[TEAM_NUMBER])
         number = m.group() if m else ""
         try:
-            date = datetime.strptime(row[DATE], "%m/%d/%y %H:%M")
+            date = datetime.strptime(row[DATE], "%m-%d-%Y")
         except:
             errors.append(["error", "Row #"+str(i+1)+" has an invalid date. WILL BE SKIPPED!"])
             continue
